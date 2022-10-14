@@ -573,12 +573,3 @@ sens_coef <- function(fit.model, X, nsim, show.step=T){
   # return
   return(table)
 }
-
-# building skeleton folder
-#Rcpp.package.skeleton("ulgee", code_files="R/ulgee.R", cpp_files="src/prod.cpp", example_code=FALSE) 
-
-# compile the attributes 
-#compileAttributes("ulgee")
-
-# building package
-#R CMD build /home/danvah/gilba_projeto/unit_lindley/ulgee
