@@ -1,6 +1,6 @@
 Package: ulgee
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
+Title: Unit-Lindley Generalized Estimating Equations
 Version: 1.0
 Date: 2022-10-13
 Author: Your Name
@@ -13,9 +13,9 @@ Depends:
     gamlss.dist,
     Matrix,
     RcppEigen
-Maintainer: Your Name <your@email.com>
-Description: One paragraph description of what the package does as one
-       or more full sentences.
+Maintainer: Danilo Silva <danilo.silva@ime.usp.br>
+Description: Implementation of the Unit-Lindley Generalized Estimating 
+             Equations for unbalanced correlated data.
 License: GPL (>= 2)
 Imports: 
     Rcpp (>= 1.0.9),
