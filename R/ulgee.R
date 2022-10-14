@@ -1,10 +1,4 @@
 
-# set directory
-#setwd("/home/danvah/gilba_projeto/unit_lindley")
-
-# source prod 
-Rcpp::sourceCpp("src/prod.cpp")
-
 # density 
 dul <- function(y, mu){
   return((((1-mu)^2)/(mu*(1-y)^3))*exp(-y*(1-mu)/(mu*(1-y))))
