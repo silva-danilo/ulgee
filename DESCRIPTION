@@ -1,9 +1,9 @@
 Package: ulgee
 Type: Package
-Title: Unit-Lindley Generalized Estimating Equations
+Title: Unit-Lindley based on Generalized Estimating Equations
 Version: 1.0
-Date: 2022-10-13
-Author: Your Name
+Date: 2022-10-14
+Author: Danilo Silva
 Depends:
     lamW,
     expint,
@@ -14,8 +14,8 @@ Depends:
     Matrix,
     RcppEigen
 Maintainer: Danilo Silva <danilo.silva@ime.usp.br>
-Description: Implementation of the Unit-Lindley Generalized Estimating 
-             Equations for unbalanced correlated data.
+Description: Fitting and diagnostic of the unbalanced correlated 
+             unit-Lindley data based on estimating equations.
 License: GPL (>= 2)
 Imports: 
     Rcpp (>= 1.0.9),
