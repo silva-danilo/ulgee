@@ -1,4 +1,3 @@
-
 # density 
 dul <- function(y, mu){
   return((((1-mu)^2)/(mu*(1-y)^3))*exp(-y*(1-mu)/(mu*(1-y))))
@@ -83,7 +82,7 @@ rho_moments <- function(u, var.u, corr_type, time, id){
   }
   
   # prep. correlation
-  r <- u/sqrt(var.u); rho_hat <- 0; smin <- 0
+  r <- u/sqrt(var.u); rho_hat <- 0
   ids <- as.numeric(names(table(id))[table(id)>=2])
   
   if(corr_type == "AR1"){
@@ -206,7 +205,7 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
     D <- -var.u*dmu.deta(eta)
     t <- eta - u/D
     rho <- rho_moments(u, var.u, corr_type, time, id)
-    W <- list(); sum_1 <- 0; sum_2 <- 0; sum_3 <- 0
+    W <- list(); H_1i <- 0; sum_1 <- 0; sum_2 <- 0; sum_3 <- 0
     for(i in unique(id)){
       pos <- id==i; Di <- D[pos]; Xi <- rbind(X[pos,]); ti <- t[pos]
       if(ncol(X)==1) Xi <- cbind(X[pos,])
@@ -214,16 +213,18 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
       Wi <- prod_2(Ri, sqrt(var.u[pos]), Di)
       W[[length(W)+1]] <- Wi
       rpi <- prod_1(Wi, eta[pos]-ti)
+      H_1i <- H_1i + prod_3(Xi, diag(Di^2))
       sum_1 <- sum_1 + prod_3(Xi, Wi)
       sum_2 <- sum_2 + prod_1(t(Xi), prod_1(Wi, ti))  
       sum_3 <- sum_3 + prod_3(Xi, rpi%*%t(rpi))
     }
     beta_2 <- prod_4(sum_1, sum_2)
+    if(sum(is.na(beta_2))!=0){iter <- max.iter; break}
     epsilon_2 <- max(abs((beta_2 - beta_1)/beta_1)) 
     if(show.step) cat("Iteration", iter, "of", max.iter, "- evaluated criterium =", epsilon_2,"\r")
     iter <- iter + 1
   }
-  
+
   # converged
   if(iter < max.iter & sum(pul(y, mu) >= 1) == 0 & sum(pul(y, mu) <= 0) == 0 & sum(rho[rho!=1]==0.5) == 0){
     # p-values
@@ -231,10 +232,8 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
     wald.stat <- (beta_1^2)/diag(var.beta) 
     pvalue <- 1-pchisq(wald.stat, 1)
     
-    # partial residual
-    term <- X%*%diag(beta_1)
-    inv_rp <- t - eta + term
-    for(i in 1:ncol(inv_rp))  inv_rp[,i] <- inv_g(inv_rp[,i])
+    # qic
+    qic <- -2*sum(log(dul(y, mu))) + 2*sum(diag(var.beta%*%H_1i))
     
     # sensitivity case-weight
     t.delta_c <- Matrix::Diagonal(x=u*(D^(-1)))%*%Matrix::.bdiag(W)%*%X
@@ -248,8 +247,8 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
     Bi_r <- Matrix::diag((t.delta_r%*%solve(sum_1))%*%Matrix::t(t.delta_r))/sqrt(B_r.tr)
     
     # return 
-    output <- list(beta_1, var.beta, pvalue, rho, mu, qnorm(pul(y, mu), 0, 1), inv_rp, Bi_c, Bi_r, corr_type, time, id, link, TRUE)
-    names(output) <- c("mu.coefs", "vcov", "pvalues", "rho", "mu.hat", "rq", "inv_rp", "Bi_c", "Bi_r", "corr_type", "time", "id", "link", "converged")
+    output <- list(beta_1, var.beta, pvalue, rho, mu, qnorm(pul(y, mu), 0, 1), Bi_c, Bi_r, qic, corr_type, time, id, link, TRUE)
+    names(output) <- c("mu.coefs", "vcov", "pvalues", "rho", "mu.hat", "rq", "Bi_c", "Bi_r", "qic", "corr_type", "time", "id", "link", "converged")
     return(output)
   }
   
@@ -347,6 +346,7 @@ ulgee.fast <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter){
       sum_2 <- sum_2 + prod_1(t(Xi), prod_1(Wi, ti))  
     }
     beta_2 <- prod_4(sum_1, sum_2)
+    if(sum(is.na(beta_2))!=0){iter <- max.iter; break}
     epsilon_2 <- max(abs((beta_2 - beta_1)/beta_1)) 
     iter <- iter + 1
   }
@@ -459,7 +459,7 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
     
     # plot reference line
     par(new=TRUE)
-    abline(a=0, b=1, xlab="", ylab="", lty=2, lwd=2, main="")
+    abline(a=0, b=1, xlab="", ylab="", lty=2, lwd=1, main="")
   }
   
   # non random selection
@@ -502,11 +502,11 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
       
       # plot qq-norm quantile residual (with band)
       par(new=TRUE)
-      qqnorm(e1, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=2)
+      qqnorm(e1, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=1)
       par(new=TRUE)
-      qqnorm(e2, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=2)
+      qqnorm(e2, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=1)
       par(new=TRUE)
-      qqnorm(med, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=2, main="", lwd=2)
+      qqnorm(med, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=2, main="", lwd=1)
     }
   }
 }
