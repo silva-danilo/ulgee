@@ -434,7 +434,7 @@ ul_sim <- function(beta, R, rho, n, s, corr_type1, corr_type2, show.step=T){
 }
 
 # diagnostic quantile residual 
-diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
+diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, label.time){
   # random selection
   if(random==T){
     pos <- rep(T, nrow(X))
@@ -451,11 +451,11 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
     # plot quantile residual vs value adjusted
     par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
     plot(fit.model$mu.hat[pos], fit.model$rq[pos], xlab="Fitted value", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
-    if(n > 0) identify(x=fit.model$mu.hat[pos], y=fit.model$rq[pos], label=paste(paste("(",paste(fit.model$id[pos], fit.model$time[pos], sep=","), sep=""),")",sep=""), n=n, cex=1.2)
+    if(n > 0) identify(x=fit.model$mu.hat[pos], y=fit.model$rq[pos], label=paste(paste("(",paste(label.id[pos], label.time[pos], sep=","), sep=""),")",sep=""), n=n, cex=1.2)
     
     # plot qq-norm quantile residual 
     faixa <- range(fit.model$rq[pos]) 
-    qqnorm(fit.model$rq[pos], xlab="N(0,1) quantile", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
+    qqnorm(fit.model$rq[pos], xlab="Quantile of N(0,1)", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
     
     # plot reference line
     par(new=TRUE)
@@ -467,7 +467,7 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
     # plot quantile residual vs value adjusted
     par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
     plot(fit.model$mu.hat, fit.model$rq, xlab="Fitted value", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
-    if(n > 0) identify(x=fit.model$mu.hat, y=fit.model$rq, label=paste(paste("(",paste(fit.model$id, fit.model$time, sep=","), sep=""),")",sep=""), n=n, cex=1.2)
+    if(n > 0) identify(x=fit.model$mu.hat, y=fit.model$rq, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n, cex=1.2)
     
     # create band
     if(nsim > 0){
@@ -498,7 +498,7 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
     
       # plot qq-norm quantile residual 
       faixa <- range(e1, e2) 
-      qqnorm(fit.model$rq, xlab="N(0,1) quantile", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
+      qqnorm(fit.model$rq, xlab="Quantile of N(0,1)", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
       
       # plot qq-norm quantile residual (with band)
       par(new=TRUE)
@@ -512,16 +512,16 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n){
 }
 
 # sensitivity via conformal normal curvature 
-sens_conf <- function(fit.model, c_c, n_c, c_r, n_r){
+sens_conf <- function(fit.model, c_c, n_c, c_r, n_r, label.id, label.time){
   # plot Bi_c vs index
   par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
   plot(fit.model$Bi_c, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5, cex.axis=1.2, pch=16)
-  if(n_c > 0) identify(x=1:length(fit.model$Bi_c), y=fit.model$Bi_c, label=paste(paste("(",paste(fit.model$id, fit.model$time, sep=","), sep=""),")",sep=""), n=n_c, cex=1.2)
+  if(n_c > 0) identify(x=1:length(fit.model$Bi_c), y=fit.model$Bi_c, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n_c, cex=1.2)
   abline(a=mean(fit.model$Bi_c) + c_c*sd(fit.model$Bi_c), b=0, lty=2, lwd=2)
   
   # plot Bi_r vs index
   plot(fit.model$Bi_r, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5, cex.axis=1.2, pch=16)
-  if(n_r > 0) identify(x=1:length(fit.model$Bi_r), y=fit.model$Bi_r, label=paste(paste("(",paste(fit.model$id, fit.model$time, sep=","), sep=""),")",sep=""), n=n_r, cex=1.2)
+  if(n_r > 0) identify(x=1:length(fit.model$Bi_r), y=fit.model$Bi_r, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n_r, cex=1.2)
   abline(a=mean(fit.model$Bi_r) + c_r*sd(fit.model$Bi_r), b=0, lty=2, lwd=2)
 }
 
