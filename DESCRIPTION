@@ -3,7 +3,7 @@ Type: Package
 Title: Unit-Lindley based on Estimating Equations
 Version: 1.0
 Date: 2022-10-14
-Author: Danilo Silva
+Author: 
 Depends:
     lamW,
     expint,
@@ -13,7 +13,7 @@ Depends:
     gamlss.dist,
     Matrix,
     RcppEigen
-Maintainer: Danilo Silva <danilo.silva@ime.usp.br>
+Maintainer: 
 Description: Fitting and diagnostic of the unbalanced correlated 
              unit-Lindley data based on estimating equations.
 License: GPL (>= 2)
