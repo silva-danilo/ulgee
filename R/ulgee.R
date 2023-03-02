@@ -1,6 +1,8 @@
 # density 
 dul <- function(y, mu){
-  return((((1-mu)^2)/(mu*(1-y)^3))*exp(-y*(1-mu)/(mu*(1-y))))
+  d <- (((1-mu)^2)/(mu*(1-y)^3))*exp(-y*(1-mu)/(mu*(1-y)))
+  d[y<=0] <- 0; d[y>=1] <- 0
+  return(d)
 }
 
 # distribution
@@ -16,7 +18,10 @@ qul <- function(p, mu){
   pos <- mu > 0.002; q <- numeric(length(p))
   W1 <- lamW::lambertWm1((p[pos]-1)*exp(-1/mu[pos])/mu[pos])
   q[pos] <- (1+W1*mu[pos])/((W1+1)*mu[pos])
-  q[!pos] <- Vectorize(function(p, mu) uniroot((function(x) pul(x, mu) - p), c(0+.Machine$double.eps,1-.Machine$double.eps), f.upper=1-.Machine$double.eps, tol=1e-10)$root)(p[!pos], mu[!pos])
+  q[!pos] <- Vectorize(function(p, mu) 
+    uniroot((function(x) pul(x, mu) - p), c
+            (0+.Machine$double.eps,1-.Machine$double.eps), 
+            f.upper=1-.Machine$double.eps, tol=1e-10)$root)(p[!pos], mu[!pos])
   return(unlist(q))
 }
 
@@ -41,7 +46,8 @@ R_i <- function(rho, corr_type, time_i){
     }
     
     if(corr_type == "AR1"){
-      R <- rho^abs(matrix(time_i-1, nrow=length(time_i), ncol=length(time_i), byrow=T) - (time_i-1))
+      R <- rho^abs(matrix(time_i-1, nrow=length(time_i), ncol=length(time_i),
+                          byrow=T) - (time_i-1))
     }
     
     if(corr_type == "EXC"){
@@ -67,7 +73,8 @@ rul_corr <- function(mu, rho, corr_type, time, id, show.step=T){
   if(show.step) pb <- pbapply::startpb(min=0, max=length(ids))
   unif_corr <- unlist(lapply(ids, function(i){
     pos <- id==i; if(show.step) pbapply::setpb(pb, i)
-    pnorm(mvnfast::rmvn(1, rep(0, length(id[pos])), R_i(rho, corr_type, time[pos])))
+    pnorm(mvnfast::rmvn(1, rep(0, length(id[pos])), 
+                        R_i(rho, corr_type, time[pos])))
     }))
   
   # return
@@ -128,7 +135,8 @@ rho_moments <- function(u, var.u, corr_type, time, id){
 }
 
 # newton score unit lindley
-ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.step=T){
+ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, 
+                  show.step=T){
   if(link=="logit"){
     # link 
     g <- function(mu){
@@ -195,7 +203,8 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
   # iterative process
   beta_2 <- as.numeric(coef(lm(g(y)~X-1)))
   epsilon_2 <- 10; iter <- 1
-  if(show.step) cat("Iteration", iter-1, "of", max.iter, "- evaluated criterium =", epsilon_2,"\r")
+  if(show.step) cat("Iteration", iter-1, "of", max.iter,
+                    "- evaluated criterium =", epsilon_2,"\r")
   while(epsilon_2 > epsilon_1 & iter <= max.iter){
     beta_1 <- beta_2
     eta <- prod_1(X, beta_1)
@@ -221,12 +230,14 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
     beta_2 <- prod_4(sum_1, sum_2)
     if(sum(is.na(beta_2))!=0){iter <- max.iter; break}
     epsilon_2 <- max(abs((beta_2 - beta_1)/beta_1)) 
-    if(show.step) cat("Iteration", iter, "of", max.iter, "- evaluated criterium =", epsilon_2,"\r")
+    if(show.step) cat("Iteration", iter, "of",
+                      max.iter, "- evaluated criterium =", epsilon_2,"\r")
     iter <- iter + 1
   }
 
   # converged
-  if(iter < max.iter & sum(pul(y, mu) >= 1) == 0 & sum(pul(y, mu) <= 0) == 0 & sum(rho[rho!=1]==0.5) == 0){
+  if(iter < max.iter & sum(pul(y, mu) >= 1) == 0 &
+     sum(pul(y, mu) <= 0) == 0 & sum(rho[rho!=1]==0.5) == 0){
     # p-values
     var.beta <- prod_5(sum_1, sum_3)
     wald.stat <- (beta_1^2)/diag(var.beta) 
@@ -237,18 +248,28 @@ ulgee <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter, show.ste
     
     # sensitivity case-weight
     t.delta_c <- Matrix::Diagonal(x=u*(D^(-1)))%*%Matrix::.bdiag(W)%*%X
-    B_c.tr <- sum(Matrix::diag((t.delta_c%*%solve(sum_1))%*%(Matrix::t(t.delta_c)%*%(t.delta_c%*%solve(sum_1)))%*%Matrix::t(t.delta_c)))
-    Bi_c <- Matrix::diag((t.delta_c%*%solve(sum_1))%*%Matrix::t(t.delta_c))/sqrt(B_c.tr)
+    B_c.tr <- sum(Matrix::diag((t.delta_c%*%solve(sum_1))%*%
+                                 (Matrix::t(t.delta_c)%*%
+                                    (t.delta_c%*%solve(sum_1)))%*%
+                                 Matrix::t(t.delta_c)))
+    Bi_c <- Matrix::diag((t.delta_c%*%solve(sum_1))%*%
+                           Matrix::t(t.delta_c))/sqrt(B_c.tr)
     
     # sensitivity response
     f <- sqrt(ul.var(mu))/((1-y)*mu)^2
     t.delta_r <- Matrix::Diagonal(x=f*(D^(-1)))%*%Matrix::.bdiag(W)%*%X
-    B_r.tr <- sum(Matrix::diag((t.delta_r%*%solve(sum_1))%*%(Matrix::t(t.delta_r)%*%(t.delta_r%*%solve(sum_1)))%*%Matrix::t(t.delta_r)))
-    Bi_r <- Matrix::diag((t.delta_r%*%solve(sum_1))%*%Matrix::t(t.delta_r))/sqrt(B_r.tr)
+    B_r.tr <- sum(Matrix::diag((t.delta_r%*%solve(sum_1))%*%
+                                 (Matrix::t(t.delta_r)%*%
+                                    (t.delta_r%*%solve(sum_1)))%*%
+                                 Matrix::t(t.delta_r)))
+    Bi_r <- Matrix::diag((t.delta_r%*%solve(sum_1))%*%
+                           Matrix::t(t.delta_r))/sqrt(B_r.tr)
     
     # return 
-    output <- list(beta_1, var.beta, pvalue, rho, mu, qnorm(pul(y, mu), 0, 1), Bi_c, Bi_r, qic, corr_type, time, id, link, TRUE)
-    names(output) <- c("mu.coefs", "vcov", "pvalues", "rho", "mu.hat", "rq", "Bi_c", "Bi_r", "qic", "corr_type", "time", "id", "link", "converged")
+    output <- list(beta_1, var.beta, pvalue, rho, mu, qnorm(pul(y, mu), 0, 1),
+                   Bi_c, Bi_r, qic, corr_type, time, id, link, TRUE)
+    names(output) <- c("mu.coefs", "vcov", "pvalues", "rho", "mu.hat", "rq", "Bi_c",
+                       "Bi_r", "qic", "corr_type", "time", "id", "link", "converged")
     return(output)
   }
   
@@ -352,9 +373,12 @@ ulgee.fast <- function(y, X, time, id, corr_type, link, epsilon_1, max.iter){
   }
   
   # converged
-  if(iter < max.iter & sum(pul(y, mu) >= 1) == 0 & sum(pul(y, mu) <= 0) == 0 & sum(rho[rho!=1]==0.5) == 0){
-    output <- list(beta_1, rho, mu, qnorm(pul(y, mu), 0, 1), corr_type, time, id, link, TRUE)
-    names(output) <- c("mu.coefs", "rho", "mu.hat", "rq", "corr_type", "time", "id", "link", "converged")
+  if(iter < max.iter & sum(pul(y, mu) >= 1) == 0 & sum(pul(y, mu) <= 0) == 0 & 
+     sum(rho[rho!=1]==0.5) == 0){
+    output <- list(beta_1, rho, mu, qnorm(pul(y, mu), 0, 1), corr_type, 
+                   time, id, link, TRUE)
+    names(output) <- c("mu.coefs", "rho", "mu.hat", "rq", "corr_type", "time", 
+                       "id", "link", "converged")
     return(output)
   }
   
@@ -397,8 +421,10 @@ ul_sim <- function(beta, R, rho, n, s, corr_type1, corr_type2, show.step=T){
       sim_ok <- 0
       while(sim_ok==0){
         y_sim <- rul_corr(mu, rho_sim, corr_type1, data[,3], data[,4], F)
-        fit1_i <- ulgee.fast(y_sim, data[,-c(3,4)], data[,3], data[,4], corr_type1, "probit", 1e-06, 20)
-        fit2_i <- ulgee.fast(y_sim, data[,-c(3,4)], data[,3], data[,4], corr_type2, "probit", 1e-06, 20)
+        fit1_i <- ulgee.fast(y_sim, data[,-c(3,4)], data[,3], data[,4], 
+                             corr_type1, "probit", 1e-06, 20)
+        fit2_i <- ulgee.fast(y_sim, data[,-c(3,4)], data[,3], data[,4], 
+                             corr_type2, "probit", 1e-06, 20)
         if(fit1_i$converged==TRUE & fit2_i$converged==TRUE){sim_ok <- 1}
       }
       
@@ -434,7 +460,8 @@ ul_sim <- function(beta, R, rho, n, s, corr_type1, corr_type2, show.step=T){
 }
 
 # diagnostic quantile residual 
-diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, label.time){
+diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, 
+                       label.time){
   # random selection
   if(random==T){
     pos <- rep(T, nrow(X))
@@ -450,12 +477,17 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, l
     
     # plot quantile residual vs value adjusted
     par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
-    plot(fit.model$mu.hat[pos], fit.model$rq[pos], xlab="Fitted value", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
-    if(n > 0) identify(x=fit.model$mu.hat[pos], y=fit.model$rq[pos], label=paste(paste("(",paste(label.id[pos], label.time[pos], sep=","), sep=""),")",sep=""), n=n, cex=1.2)
+    plot(fit.model$mu.hat[pos], fit.model$rq[pos], xlab="Fitted value", 
+         ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
+    if(n > 0) identify(x=fit.model$mu.hat[pos], y=fit.model$rq[pos], 
+                       label=paste(paste("(",paste(label.id[pos], label.time[pos],
+                                                   sep=","), sep=""),")",sep=""),
+                       n=n, cex=1.2)
     
     # plot qq-norm quantile residual 
     faixa <- range(fit.model$rq[pos]) 
-    qqnorm(fit.model$rq[pos], xlab="Quantile of N(0,1)", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
+    qqnorm(fit.model$rq[pos], xlab="Quantile of N(0,1)", ylab="Quantile residual",
+           pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
     
     # plot reference line
     par(new=TRUE)
@@ -466,8 +498,11 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, l
   else{
     # plot quantile residual vs value adjusted
     par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
-    plot(fit.model$mu.hat, fit.model$rq, xlab="Fitted value", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
-    if(n > 0) identify(x=fit.model$mu.hat, y=fit.model$rq, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n, cex=1.2)
+    plot(fit.model$mu.hat, fit.model$rq, xlab="Fitted value", 
+         ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2)
+    if(n > 0) identify(x=fit.model$mu.hat, y=fit.model$rq, 
+                       label=paste(paste("(",paste(label.id, label.time, sep=","),
+                                         sep=""),")",sep=""), n=n, cex=1.2)
     
     # create band
     if(nsim > 0){
@@ -481,8 +516,10 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, l
       for(j in 1:nsim){
         sim_ok <- 0
         while(sim_ok==0){
-          y_sim <- rul_corr(fit.model$mu.hat, fit.model$rho, fit.model$corr_type, fit.model$time, fit.model$id, F)
-          fit_j <- ulgee.fast(y_sim, X, fit.model$time, fit.model$id, fit.model$corr_type, fit.model$link, 1e-6, 20)
+          y_sim <- rul_corr(fit.model$mu.hat, fit.model$rho, fit.model$corr_type, 
+                            fit.model$time, fit.model$id, F)
+          fit_j <- ulgee.fast(y_sim, X, fit.model$time, fit.model$id,
+                              fit.model$corr_type, fit.model$link, 1e-6, 20)
           if(fit_j$converged==TRUE){sim_ok <- 1}
         }
         e[,j] <- sort(fit_j$rq)
@@ -498,15 +535,19 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, l
     
       # plot qq-norm quantile residual 
       faixa <- range(e1, e2) 
-      qqnorm(fit.model$rq, xlab="Quantile of N(0,1)", ylab="Quantile residual", pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
+      qqnorm(fit.model$rq, xlab="Quantile of N(0,1)", ylab="Quantile residual",
+             pch=16, lwd=2, cex.lab=1.5, cex.axis=1.2, ylim=faixa, main="")
       
       # plot qq-norm quantile residual (with band)
       par(new=TRUE)
-      qqnorm(e1, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=1)
+      qqnorm(e1, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1,
+             main="", lwd=1)
       par(new=TRUE)
-      qqnorm(e2, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1, main="", lwd=1)
+      qqnorm(e2, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=1,
+             main="", lwd=1)
       par(new=TRUE)
-      qqnorm(med, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=2, main="", lwd=1)
+      qqnorm(med, axes=FALSE, xlab="", ylab="", type="l", ylim=faixa, lty=2, 
+             main="", lwd=1)
     }
   }
 }
@@ -515,20 +556,27 @@ diag_quant <- function(fit.model, X, nsim, show.step=T, random=F, n, label.id, l
 sens_conf <- function(fit.model, c_c, n_c, c_r, n_r, label.id, label.time){
   # plot Bi_c vs index
   par(mar=c(5.5,5.5,2,2), mfrow=c(1,2))
-  plot(fit.model$Bi_c, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5, cex.axis=1.2, pch=16)
-  if(n_c > 0) identify(x=1:length(fit.model$Bi_c), y=fit.model$Bi_c, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n_c, cex=1.2)
+  plot(fit.model$Bi_c, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5,
+       cex.axis=1.2, pch=16)
+  if(n_c > 0) identify(x=1:length(fit.model$Bi_c), y=fit.model$Bi_c, 
+                       label=paste(paste("(",paste(label.id, label.time, sep=","),
+                                         sep=""),")",sep=""), n=n_c, cex=1.2)
   abline(a=mean(fit.model$Bi_c) + c_c*sd(fit.model$Bi_c), b=0, lty=2, lwd=2)
   
   # plot Bi_r vs index
-  plot(fit.model$Bi_r, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5, cex.axis=1.2, pch=16)
-  if(n_r > 0) identify(x=1:length(fit.model$Bi_r), y=fit.model$Bi_r, label=paste(paste("(",paste(label.id, label.time, sep=","), sep=""),")",sep=""), n=n_r, cex=1.2)
+  plot(fit.model$Bi_r, ylab=expression("B"["ij"]), xlab="Index", cex.lab=1.5,
+       cex.axis=1.2, pch=16)
+  if(n_r > 0) identify(x=1:length(fit.model$Bi_r), y=fit.model$Bi_r, 
+                       label=paste(paste("(",paste(label.id, label.time, sep=","),
+                                         sep=""),")",sep=""), n=n_r, cex=1.2)
   abline(a=mean(fit.model$Bi_r) + c_r*sd(fit.model$Bi_r), b=0, lty=2, lwd=2)
 }
 
 sens_mrc <- function(fit.model, y, X, n.sample, pos, show.step=T){
   # prep
   table <- matrix(NA, n.sample+1, 3)
-  fit_i <- ulgee.fast(y[!pos], X[!pos,], fit.model$time[!pos], fit.model$id[!pos], fit.model$corr_type, fit.model$link, 1e-6, 40)
+  fit_i <- ulgee.fast(y[!pos], X[!pos,], fit.model$time[!pos], fit.model$id[!pos],
+                      fit.model$corr_type, fit.model$link, 1e-6, 40)
   table[,1] <- 0:n.sample
   table[1,2] <- max(abs((fit.model$mu.coefs-fit_i$mu.coefs)/fit.model$mu.coefs))
   table[1,3] <- fit_i$rho
@@ -540,7 +588,9 @@ sens_mrc <- function(fit.model, y, X, n.sample, pos, show.step=T){
     sim_ok <- 0
     while(sim_ok==0){
       pos_i <- (1:length(y)) %in% sample((1:length(y))[!pos], sum(pos))
-      fit_i <- ulgee.fast(y[!pos_i], X[!pos_i,], fit.model$time[!pos_i], fit.model$id[!pos_i], fit.model$corr_type, fit.model$link, 1e-6, 40)
+      fit_i <- ulgee.fast(y[!pos_i], X[!pos_i,], fit.model$time[!pos_i],
+                          fit.model$id[!pos_i], fit.model$corr_type, 
+                          fit.model$link, 1e-6, 40)
       if(fit_i$converged==TRUE){sim_ok <- 1}
     }
     table[i+1,2] <- max(abs((fit.model$mu.coefs-fit_i$mu.coefs)/fit.model$mu.coefs))
@@ -562,8 +612,10 @@ sens_coef <- function(fit.model, X, nsim, show.step=T){
   for(j in 1:nsim){
     sim_ok <- 0
     while(sim_ok==0){
-      y_sim <- rul_corr(fit.model$mu.hat, fit.model$rho, fit.model$corr_type, fit.model$time, fit.model$id, F)
-      fit_j <- ulgee.fast(y_sim, X, fit.model$time, fit.model$id, fit.model$corr_type, fit.model$link, 1e-6, 20)
+      y_sim <- rul_corr(fit.model$mu.hat, fit.model$rho, fit.model$corr_type, 
+                        fit.model$time, fit.model$id, F)
+      fit_j <- ulgee.fast(y_sim, X, fit.model$time, fit.model$id, 
+                          fit.model$corr_type, fit.model$link, 1e-6, 20)
       if(fit_j$converged==TRUE){sim_ok <- 1}
     }
     table[j,] <- fit_j$mu.coefs
