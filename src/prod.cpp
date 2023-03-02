@@ -1,4 +1,3 @@
-
 // packages
 #include <Rcpp.h>
 #include <RcppEigen.h>
