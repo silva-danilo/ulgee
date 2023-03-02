@@ -15,7 +15,8 @@ Eigen::VectorXd prod_1(const Eigen::MatrixXd M, Eigen::VectorXd m){
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd prod_2(const Eigen::MatrixXd R, Eigen::VectorXd sigma, Eigen::VectorXd D){
+Eigen::MatrixXd prod_2(const Eigen::MatrixXd R, Eigen::VectorXd sigma, 
+                       Eigen::VectorXd D){
   MatrixXd Om = sigma.asDiagonal()*R*sigma.asDiagonal();
   return D.asDiagonal()*Om.inverse()*D.asDiagonal();
 }
