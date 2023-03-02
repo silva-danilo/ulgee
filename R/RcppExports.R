@@ -20,4 +20,3 @@ prod_4 <- function(S1, s2) {
 prod_5 <- function(S1, S3) {
     .Call(`_ulgee_prod_5`, S1, S3)
 }
-
