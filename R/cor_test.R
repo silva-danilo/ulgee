@@ -1,4 +1,3 @@
-
 # pacotes
 library(MASS)
 
