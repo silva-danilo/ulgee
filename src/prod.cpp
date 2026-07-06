@@ -1,5 +1,4 @@
-
-// packages
+// packs
 #include <Rcpp.h>
 #include <RcppEigen.h>
 
