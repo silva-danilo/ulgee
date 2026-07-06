@@ -1,4 +1,3 @@
-
 # rho estimator (each cluster)
 rho_optim <- function(u, var.u, D, X, corr_type, id){
   rho_hat <- numeric(length(unique(id)))
