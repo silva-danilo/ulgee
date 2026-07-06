@@ -1,4 +1,3 @@
-
 # set directory
 #setwd("C:/Users/danvah/Desktop/ulgee")
 #setwd("D:/Users/danilo.silva/Desktop/ulgee")
