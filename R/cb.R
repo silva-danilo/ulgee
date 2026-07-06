@@ -1,4 +1,3 @@
-
 # confidence band
 par(mar=c(5.5,5.5,2,2), mfrow=c(1,3))
 colors <- viridis::viridis(3, a=0.65)
